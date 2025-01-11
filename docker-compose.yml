@@ -1,0 +1,11 @@
+services:
+  gmail_checker:
+    build: .
+    container_name: gmail_checker_container
+    restart: unless-stopped
+    volumes:
+      - ./downloads:/app/downloads
+      - ./credentials.json:/app/credentials.json
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1 # 즉시 로그 출력
