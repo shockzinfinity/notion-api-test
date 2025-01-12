@@ -82,7 +82,7 @@ def check_emails(service, sender_email, download_path):
 
 
 def main():
-  sender_email = "no-reply@medium.com"
+  sender_email = "noreply@medium.com"
   download_path = "downloads"
   interval = 1
 

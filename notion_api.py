@@ -292,24 +292,24 @@ if __name__ == "__main__":
     input_directory = "./bookmarks"
 
     # ✅ Step 1: Notion 데이터베이스에서 old_list 가져오기
-    # old_list = fetch_notion_database()
+    old_list = fetch_notion_database()
 
     # ✅ Step 2: 로컬 HTML 파일에서 new_list 가져오기
-    # new_list = process_multiple_html_files(input_directory)
-    # print(f"✅ Loaded {len(new_list)} items from bookmarks.")
+    new_list = process_multiple_html_files(input_directory)
+    print(f"✅ Loaded {len(new_list)} items from bookmarks.")
 
     # ✅ Step 3: 글로벌 비교 수행
-    # added, removed, unchanged = global_diff_update(old_list, new_list)
+    added, removed, unchanged = global_diff_update(old_list, new_list)
 
     # ✅ Step 4: Notion 업데이트 수행
-    # update_notion_database(added, removed)
+    update_notion_database(added, removed)
 
     # ✅ check item
-    url_to_check = "https://medium.com/p/building-robust-api-clients-with-refit-rest-library-in-c-43862c4cad76"
-    item_exists = check_item_exists_in_notion("url", url_to_check)
-    if item_exists:
-        print("✅ The item already exists in the database.")
-    else:
-        print("❌ The item does not exist. You can safely add it.")
+    # url_to_check = "https://medium.com/p/building-robust-api-clients-with-refit-rest-library-in-c-43862c4cad76"
+    # item_exists = check_item_exists_in_notion("url", url_to_check)
+    # if item_exists:
+    #     print("✅ The item already exists in the database.")
+    # else:
+    #     print("❌ The item does not exist. You can safely add it.")
 
     print("\n🎯 Database synchronization complete!")
