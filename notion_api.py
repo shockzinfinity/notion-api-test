@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import glob
 from lxml import etree
 import json
+from datetime import datetime
 
 load_dotenv()
 
@@ -220,6 +221,7 @@ def extract_links_from_html(file_path):
     XPath를 사용하여 HTML 파일에서 <body> → <section> → <ul> → <li> → <a> 구조로 URL과 제목을 추출합니다.
     """
     links = []  # 결과를 저장할 리스트
+    date_format = "%Y-%m-%d %I:%M %p"
 
     # HTML 파일 읽기
     with open(file_path, "r", encoding="utf-8") as file:
@@ -239,32 +241,33 @@ def extract_links_from_html(file_path):
                 a_tag[0].text.strip() if a_tag and a_tag[0].text else None
             )  # 태그 텍스트 추출 (공백 제거)
             time = time_tag[0].text.strip() if time_tag and time_tag[0].text else None
+            date_object = datetime.strptime(time, date_format)
 
             if url and title:
-                links.append({"url": url, "title": title, "time": time})
+                links.append({"url": url, "title": title, "time": date_object.isoformat()})
 
     return links
 
 
 # ✅ 여러 HTML 파일에서 URL과 제목을 추출
 def process_multiple_html_files(directory, file_pattern="bookmarks-*.html"):
-    """
-    주어진 디렉터리에서 여러 HTML 파일을 읽고 URL과 제목을 추출합니다.
-    """
-    all_links = []  # 모든 링크를 저장할 리스트
+  """
+  주어진 디렉터리에서 여러 HTML 파일을 읽고 URL과 제목을 추출합니다.
+  """
+  all_links = []  # 모든 링크를 저장할 리스트
 
-    # 파일 패턴에 맞는 모든 HTML 파일 찾기
-    file_paths = glob.glob(os.path.join(directory, file_pattern))
+  # 파일 패턴에 맞는 모든 HTML 파일 찾기
+  file_paths = glob.glob(os.path.join(directory, file_pattern))
 
-    for file_path in file_paths:
-        print(f"📄 Processing: {file_path}")
-        links = extract_links_from_html(file_path)
-        all_links.extend(links)  # 추출된 링크를 전체 리스트에 추가
+  for file_path in file_paths:
+    print(f"📄 Processing: {file_path}")
+    links = extract_links_from_html(file_path)
+    all_links.extend(links)  # 추출된 링크를 전체 리스트에 추가
 
-    with open("all_links.json", "w", encoding="utf-8") as jsonfile:
-        json.dump(all_links, jsonfile, indent=2, ensure_ascii=False)
+  with open("all_links.json", "w", encoding="utf-8") as jsonfile:
+    json.dump(all_links, jsonfile, indent=2, ensure_ascii=False)
 
-    return all_links
+  return all_links
 
 
 # ✅ 글로벌 비교 로직

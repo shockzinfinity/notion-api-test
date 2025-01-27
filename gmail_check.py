@@ -33,7 +33,12 @@ def authenticate_gmail():
     creds = Credentials.from_authorized_user_file(token_path, SCOPES)
   if not creds or not creds.valid:
     if creds and creds.expired and creds.refresh_token:
-      creds.refresh(Request())
+      try:
+
+        creds.refresh(Request())
+      except:
+        flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
+        creds = flow.run_local_server(port=0)
     else:
       flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
       creds = flow.run_local_server(port=0)
@@ -49,7 +54,7 @@ def check_emails(service, sender_email, download_path):
       messages = results.get("messages", [])
 
       if not messages:
-        logging.info("새로운 이메일이 없습니다.")
+        # logging.info("새로운 이메일이 없습니다.")
         return False
 
       for message in messages:
@@ -57,9 +62,9 @@ def check_emails(service, sender_email, download_path):
         payload = msg["payload"]
         headers = payload.get("headers", [])
 
-        for header in headers:
-          if header["name"] == "Subject":
-            logging.info(f"제목: {headers['value']}")
+        # for header in headers:
+        #   if header["name"] == "Subject":
+        #     logging.info(f"제목: {header['value']}")
 
         if "parts" in payload["body"]:
           for part in payload["body"]["parts"]:
