@@ -101,9 +101,10 @@ def check_emails(service, sender_email, download_path, mode="attachment", search
       bool: 작업 성공 여부.
   """
   try:
-    logging.info("메일 확인 중...")
+    logging.info("📩 메일 확인 중...")
 
-    query = f"from:{sender_email}"
+    query = f"from:{sender_email} label:inbox"
+
     if search_query:
       query += f" {search_query}"
 
@@ -111,17 +112,18 @@ def check_emails(service, sender_email, download_path, mode="attachment", search
     messages = results.get("messages", [])
 
     if not messages:
-      logging.info("조건에 맞는 이메일이 없습니다.")
+      logging.info("✅ 조건에 맞는 이메일이 없습니다.")
       return False
     
     for message in messages:
+      msg_id = message["id"]
       msg = service.users().messages().get(userId="me", id=message["id"]).execute()
       payload = msg["payload"]
       headers = payload.get("headers", [])
 
       for header in headers:
         if header["name"] == "Subject":
-          logging.info(f"제목: {header['value']}")
+          logging.info(f"📌 제목: {header['value']}")
 
       if mode == "attachment":
         # 첨부파일 다운로드
@@ -138,7 +140,7 @@ def check_emails(service, sender_email, download_path, mode="attachment", search
               file_path = os.path.join(download_path, part["filename"])
               with open(file_path, "wb") as f:
                 f.write(data)
-                logging.info(f"첨부파일 저장됨: {file_path}")
+                logging.info(f"🔗 첨부파일 저장됨: {file_path}")
 
               return True
       elif mode == "body":
@@ -154,7 +156,7 @@ def check_emails(service, sender_email, download_path, mode="attachment", search
               break
         
         if not html_body:
-          print("HTML 본문을 찾을 수 없습니다.")
+          logging.info("⚠️ HTML 본문을 찾을 수 없습니다.")
           return False
 
         # HTML에서 XPath로 특정 버튼의 href 추출
@@ -167,7 +169,7 @@ def check_emails(service, sender_email, download_path, mode="attachment", search
           hrefs = tree.xpath("//a[contains(@class, 'email-button') or contains(text(), 'Download my archive')]/@href")
 
           if not hrefs:
-            logging.info("버튼 링크를 찾을 수 없습니다.")
+            logging.info("⚠️ 버튼 링크를 찾을 수 없습니다.")
             return False
 
           # 추출된 href 저장
@@ -175,16 +177,19 @@ def check_emails(service, sender_email, download_path, mode="attachment", search
           with open(file_path, "w", encoding="utf-8") as f:
             for href in hrefs:
                 f.write(href + "\n")
-                logging.info(f"추출된 링크 저장됨: {href}")
-
-          return True
+                logging.info(f"🔗 추출된 링크 저장됨: {href}")
         except Exception as e:
-          logging.error(f"HTML 파싱 중 오류 발생: {e}")
-        return False
-        
-    return False
+          logging.error(f"❌ HTML 파싱 중 오류 발생: {e}")
+
+      try:
+        service.users().messages().modify(userId="me", id=msg_id, body={"removeLabelIds": ["UNREAD"]}).execute()
+        logging.info(f"✅ 메일 ID {msg_id} → 읽음 처리됨")
+      except HttpError as e:
+        logging.error(f"❌ 읽음 처리 실패 (메일 ID: {msg_id}): {e}")
+
+    return True
   except HttpError as error:
-    logging.error(f"An error occurred: {error}")
+    logging.error(f"❌ API 오류 발생: {error}")
     return False
 
 def download_file_from_link(link, download_path):
@@ -214,6 +219,9 @@ def download_file_from_link(link, download_path):
         file.write(chunk)
 
     logging.info(f"파일 다운로드 완료: {file_path}")
+
+    # TODO: 해당 파일 다운로드 받아서 압축 풀고, bookmarks 부분을 저장 필요
+
     return file_path
   except requests.exceptions.RequestException as e:
     logging.error(f"파일 다운로드 실패: {e}")
@@ -249,7 +257,7 @@ def main():
   service = build("gmail", "v1", credentials=creds)
 
   while True:
-    if check_emails(service, sender_email, download_path, mode="body", search_query="is:read"):
+    if check_emails(service, sender_email, download_path, mode="body", search_query="subject:'Medium download request' is:unread"):
       break
     else:
       logging.info(f"첨부파일이 있는 메일을 찾지 못했습니다. {interval} 분 후 다시 시도합니다.")
